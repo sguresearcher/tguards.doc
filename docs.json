@@ -18,7 +18,10 @@
             "pages": [
               "index",
               "installation",
-              "backtotguard"
+              {
+                "page": "Back to TGuard",
+                "href": "https://tguard.org"
+              }
             ]
           }
         ]
@@ -31,6 +34,10 @@
   },
   "navbar": {
     "links": [
+      {
+        "label": "Back to TGuard",
+        "href": "https://tguard.org"
+      },
       {
         "label": "Support",
         "href": "mailto:hi@mintlify.com"
