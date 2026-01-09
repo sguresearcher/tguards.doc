@@ -21,6 +21,10 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Back to TGuard",
+        "href": "https://tguard.org"
       }
     ]
   },
@@ -28,13 +32,6 @@
     "light": "/logo/tguard.jpeg",
     "dark": "/logo/tguard.jpeg"
   },
-  "anchors": [
-    {
-      "name": "Back to TGuard",
-      "url": "https://tguard.org",
-      "icon": "arrow-left"
-    }
-  ],
   "navbar": {
     "links": [
       {
