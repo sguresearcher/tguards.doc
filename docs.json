@@ -17,8 +17,7 @@
             "group": "Get Started",
             "pages": [
               "index",
-              "installation",
-              "backtotguard"
+              "installation"
             ]
           }
         ]
@@ -27,15 +26,10 @@
   },
   "logo": {
     "light": "/logo/tguard.jpeg",
-    "dark": "/logo/tguard.jpeg",
-    "href": "https://tguard.org"
+    "dark": "/logo/tguard.jpeg"
   },
   "navbar": {
     "links": [
-      {
-        "label": "← Back to TGuard",
-        "href": "https://tguard.org"
-      },
       {
         "label": "Support",
         "href": "mailto:hi@mintlify.com"

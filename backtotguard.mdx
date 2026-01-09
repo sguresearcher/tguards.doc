@@ -2,10 +2,8 @@
 title: "Back to TGuard"
 ---
 
-<script>
-  window.location.href = "https://tguard.org";
-</script>
-
-Redirecting to TGuard...
-
-If you are not redirected automatically, [click here](https://tguard.org).
+<script dangerouslySetInnerHTML={{__html: `
+  (function() {
+    window.location.replace('https://tguard.org');
+  })();
+`}} />
