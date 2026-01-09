@@ -11,6 +11,10 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Back to TGuard",
+        "href": "https://tguard.org"
+      },
+      {
         "tab": "Guides",
         "groups": [
           {
@@ -30,10 +34,6 @@
   },
   "navbar": {
     "links": [
-      {
-        "label": "Back to TGuard",
-        "href": "https://tguard.org"
-      },
       {
         "label": "Support",
         "href": "mailto:hi@mintlify.com"
