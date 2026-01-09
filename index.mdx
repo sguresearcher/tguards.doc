@@ -1,0 +1,28 @@
+---
+title: "Introduction "
+description: "T-Guard is an open-source unified security solution designed to enhance organizational cybersecurity through a cohesive process of monitoring network activities across various devices, analyzing and enriching security events using various tools for further threat analysis. It integrates with threat intelligence sharing and leverages a SOAR platform to automate the incident response workflow, creating a streamlined and efficient defense ecosystem against cyber threats."
+---
+
+<img
+  className="hidden dark:block"
+  src="/logo/tguard.jpeg"
+  ## src="/images/hero-dark.png"
+  alt="Hero Dark"
+/>
+
+## Architecture
+
+<img
+  src="/images/architect.png"
+  alt="Architect Pn"
+  title="Architect Pn"
+  style={{ width:"100%" }}
+/>
+
+This diagram represents an integrated SoC workflow, utilizing various tools and platforms for comprehensive cybersecurity management. Here are the descriptions and functionalities of the every component within T-Guard:
+
+- Wazuh Agents: Various devices such as Mac, Windows, and Linux machines, as well as IoT devices and sensors, are sources of logs. These logs are crucial for monitoring and analysis purposes and they are sent to the WAZUH platform.
+- Wazuh Server: This is the central SIEM system that receives logs from the different devices. It acts as a security detection system to identify potential threat from the collected logs
+- IRIS: Depending on the threshold and rules we set, Wazuh will forward the logs into the IRIS platform.
+- Threat Sharing (MISP): The enriched and analyzed threat data is then shared with MISP (Malware Information Sharing Platform & Threat Sharing). This is a community-driven platform for sharing, storing, and correlating indicators of compromise of targeted attacks.
+- Shuffle as SOAR: Finally, Shuffle, acting as a Security Orchestration, Automation, and Response (SOAR) platform, takes the processed data to automate responses and security workflows. SOAR platforms are designed to help security teams manage and respond to endless alarms at machine speeds.
