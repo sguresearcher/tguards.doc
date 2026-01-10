@@ -1,0 +1,239 @@
+---
+title: 'FAQ'
+description: 'Pertanyaan yang Sering Diajukan tentang T-Guard'
+---
+
+## Umum
+
+<AccordionGroup>
+  <Accordion title="Apa itu T-Guard?">
+    T-Guard adalah solusi pusat operasi keamanan (SOC) inovatif yang memanfaatkan alat-alat open-source terkemuka untuk memberikan perlindungan yang andal bagi aset digital Anda.
+  </Accordion>
+
+  <Accordion title="Di mana saya bisa mendapatkan source code dan dokumentasi T-Guard?">
+    Anda dapat mengakses repositori dan dokumentasi resmi di sini:
+    - **Dokumentasi**: [Dokumentasi T-Guard](https://tguard.org)
+    - **Source Code**: [Repository nusantara di GitHub](https://github.com/sguresearcher/nusantara) — berisi kode dan skrip pengaturan untuk komponen T-Guard
+  </Accordion>
+
+  <Accordion title="Siapa yang melakukan maintain pada T-Guard?">
+    T-Guard adalah proyek open-source yang dikembangkan oleh komunitas. Kontributor termasuk mitra universitas dan penelitian, serta kontribusi lainnya dapat dilihat di repositori nusantara. Kunjungi [T-Guard GitHub](https://github.com/sguresearcher/nusantara) untuk informasi lebih lanjut.
+  </Accordion>
+
+  <Accordion title="Di mana saya bisa mendapatkan dukungan komunitas?">
+    Untuk dukungan komunitas, kunjungi pusat komunitas T-Guard. Platform ini menyediakan kategori dukungan, diskusi pengguna, bantuan instalasi, dan bantuan pemecahan masalah. Anda dapat mengajukan pertanyaan, melihat thread yang ada, dan melaporkan masalah.
+    
+    Kunjungi [TGuard SOC & CSC ISAC Support](https://support.tguard.org).
+  </Accordion>
+</AccordionGroup>
+
+## Instalasi
+
+<AccordionGroup>
+  <Accordion title="Apa saja prasyarat instalasi T-Guard?">
+    Sebelum menginstal T-Guard, pastikan Anda memenuhi prasyarat berikut:
+    - Sistem Linux yang bersih (disarankan **Ubuntu 24.04 LTS**)
+    - Sumber daya sistem:
+
+    | Jenis Deployment | CPU | RAM | Penyimpanan |
+    |------------------|-----|-----|-------------|
+    | Trial | 8 vCPU | 16 GB | 150 GB |
+    | Development | 8 vCPU | 32 GB | 500 GB |
+
+    - Swap memory disarankan untuk pengaturan minimal
+    - Koneksi internet broadband
+    - Docker dan alat Docker terinstal (otomatis diinstal melalui installer)
+    - Pemahaman dasar tentang operasi shell Linux
+  </Accordion>
+
+  <Accordion title="Apa saja langkah-langkah instalasi utama?">
+    Instalasi dilakukan secara otomatis melalui skrip `setup.sh` dari repositori nusantara. Berikut langkah-langkahnya:
+
+    **1. Clone repositori:**
+    ```bash
+    git clone https://github.com/sguresearcher/nusantara.git
+    cd nusantara
+    chmod +x setup.sh
+    ./setup.sh
+    ```
+
+    **2. Perbarui sistem dan instal prasyarat**
+    
+    Pilih opsi 1 di menu installer untuk memperbarui paket dan menginstal dependensi, termasuk Docker.
+
+    **3. Instal paket T-Guard SOC**
+    
+    Pilih opsi 2 dan pilih lingkungan Anda (VM lokal vs VM cloud). Installer akan otomatis menginstal Wazuh, Shuffle, IRIS, dan MISP.
+
+    Setelah instalasi selesai, installer akan menampilkan URL dashboard dan kredensial default.
+  </Accordion>
+
+  <Accordion title="Bagaimana cara menyelesaikan pengaturan integrasi T-Guard?">
+    Setelah instalasi dasar, pengaturan integrasi antar modul memerlukan API key dan webhook:
+    1. Dapatkan API key IRIS dari dashboard IRIS
+    2. Masukkan API key tersebut saat diminta selama instalasi
+    3. Berikan API key VirusTotal (jika tersedia)
+    4. Tentukan URL Webhook Shuffle (dihasilkan di dalam Shuffle) untuk alur otomatis
+    5. Ikuti petunjuk untuk menyelesaikan integrasi
+  </Accordion>
+
+  <Accordion title="Untuk apa menggunakan kredensial default?">
+    Kredensial default disediakan setelah instalasi untuk mengakses dashboard masing-masing modul, termasuk:
+    - Login admin Wazuh
+    - Login admin IRIS
+    - Login admin Shuffle
+    - Login admin/email MISP
+
+    <Warning>
+      **Penting:** Segera ubah kredensial ini di lingkungan produksi.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Bagaimana cara memverifikasi instalasi berhasil?">
+    Setelah instalasi:
+    1. Akses dashboard masing-masing modul di browser menggunakan URL yang disediakan
+    2. Masuk dengan kredensial default
+    3. Pastikan Wazuh menerima log, alur kerja Shuffle berfungsi, IRIS dapat membuka kasus, dan MISP menampilkan feed ancaman
+    4. Jalankan uji coba kasus, seperti simulasi brute-force, untuk memvalidasi deteksi dan respons
+  </Accordion>
+
+  <Accordion title="Apakah T-Guard mendukung deployment cloud dan lokal?">
+    Ya, T-Guard mendukung deployment cloud dan lokal. Saat instalasi, pilih lingkungan untuk deployment:
+    - **VM Lokal** (misalnya, VirtualBox, VMware)
+    - **VM Cloud** (misalnya, AWS, GCP, Azure)
+    
+    Ini memastikan kompatibilitas dengan platform pilihan Anda.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Mengapa saya mendapatkan peringatan SSL di browser?">
+    Selama pengaturan awal, T-Guard menggunakan sertifikat self-signed yang dapat memicu peringatan SSL di browser Anda. Hal ini diharapkan. Di lingkungan produksi, Anda harus mengganti sertifikat tersebut dengan sertifikat TLS yang valid (misalnya dari Let's Encrypt).
+  </Accordion>
+
+  <Accordion title="Masalah instalasi umum apa yang terjadi?">
+    Masalah umum yang dilaporkan oleh pengguna antara lain:
+
+    **Dashboard MISP tidak dapat diakses:**
+    Hal ini kadang terjadi saat MISP diinstal pada jaringan internal tanpa menyesuaikan baseurl. Perbarui file konfigurasi MISP dengan IP yang dapat diakses.
+
+    **Peringatan di Ubuntu 22.04:**
+    T-Guard telah diuji pada Ubuntu 24.04 LTS, jadi peringatan mungkin muncul jika menggunakan OS yang lebih lama. Gunakan dengan hati-hati pada versi sebelumnya.
+
+    Untuk pemecahan masalah lebih lanjut, kunjungi [TGuard SOC & CSCISAC Support](https://support.tguard.org).
+  </Accordion>
+</AccordionGroup>
+
+## Komponen SOC
+
+<AccordionGroup>
+  <Accordion title="Apa peran Wazuh dalam SOC ini?">
+    Wazuh berfungsi sebagai **Security Monitoring & Detection Platform**, dengan kemampuan:
+    - Log analysis dan correlation
+    - Host-based intrusion detection (HIDS)
+    - File integrity monitoring
+    - Vulnerability detection
+    - Compliance monitoring
+
+    Wazuh menjadi sumber alert utama dalam SOC.
+  </Accordion>
+
+  <Accordion title="Apa fungsi IRIS dalam ekosistem SOC?">
+    IRIS digunakan sebagai **Incident Response & Case Management System**, yang berfungsi untuk:
+    - Mencatat dan mengelola insiden keamanan
+    - Mengatur workflow investigasi
+    - Mendokumentasikan timeline, evidence, dan keputusan
+    - Kolaborasi antar analis SOC
+
+    IRIS memastikan setiap insiden tercatat, tertelusur, dan dapat diaudit.
+  </Accordion>
+
+  <Accordion title="Bagaimana peran Shuffle dalam SOC ini?">
+    Shuffle berfungsi sebagai **SOAR (Security Orchestration, Automation, and Response)**, yang:
+    - Mengotomatisasi proses respons insiden
+    - Menghubungkan Wazuh, IRIS, dan MISP
+    - Menjalankan playbook otomatis (enrichment, blocking, notification)
+
+    Dengan Shuffle, SOC dapat mengurangi respon manual dan mempercepat waktu penanganan insiden.
+  </Accordion>
+
+  <Accordion title="Apa peran MISP dalam SOC?">
+    MISP berfungsi sebagai **Threat Intelligence Platform**, yang menyediakan:
+    - IOC (IP, domain, hash, URL)
+    - Threat context dan attribution
+    - Sharing intel antar tim atau komunitas
+    - Enrichment otomatis untuk alert dan insiden
+
+    MISP membantu SOC membedakan false positive vs real threat dengan cepat.
+  </Accordion>
+</AccordionGroup>
+
+## Workflow & Integrasi
+
+<AccordionGroup>
+  <Accordion title="Bagaimana alur kerja (workflow) SOC ini?">
+    Alur kerja umumnya sebagai berikut:
+    1. **Wazuh** mendeteksi aktivitas mencurigakan
+    2. Alert dikirim ke **Shuffle**
+    3. **Shuffle**:
+       - Enrich alert ke MISP
+       - Membuat incident otomatis di IRIS
+    4. Analis SOC melakukan analisis lanjutan di **IRIS**
+    5. **Shuffle** mengeksekusi respons (block IP, isolate host, dll.)
+    6. Insiden ditutup dan didokumentasikan di **IRIS**
+  </Accordion>
+
+  <Accordion title="Apakah SOC ini mendukung otomatisasi penuh?">
+    Ya, SOC ini mendukung **semi-automated** hingga **fully automated response**, tergantung:
+    - Tingkat keparahan insiden
+    - Kebijakan organisasi
+    - Playbook yang dikonfigurasi
+
+    Untuk insiden kritikal, SOC biasanya menerapkan **human approval** sebelum eksekusi respons.
+  </Accordion>
+
+  <Accordion title="Apakah SOC ini bisa diintegrasikan dengan tools lain?">
+    Bisa. Shuffle memungkinkan integrasi tambahan seperti:
+    - Firewall / EDR / SIEM lain
+    - Email gateway
+    - Ticketing system
+    - Chat platform (Slack, Teams, dll.)
+
+    SOC dapat berkembang sesuai kebutuhan bisnis dan ancaman.
+  </Accordion>
+
+  <Accordion title="Apakah SOC ini cocok untuk organisasi skala kecil hingga besar?">
+    Cocok untuk:
+    - **Small–Medium Enterprise (SME)**
+    - **Enterprise**
+    - **Managed Security Service Provider (MSSP)**
+
+    Skalabilitas dapat disesuaikan dengan arsitektur dan resource yang tersedia.
+  </Accordion>
+</AccordionGroup>
+
+## What's New
+
+<Accordion title="What's new on T-Guard v1.2">
+  <CardGroup cols={2}>
+    <Card title="Feeding data MISP" icon="database">
+      Integrasi feed data threat intelligence MISP
+    </Card>
+    <Card title="Latest version Package" icon="box">
+      Paket terbaru untuk semua komponen
+    </Card>
+    <Card title="Workflow automation" icon="robot">
+      Otomatisasi alur kerja yang ditingkatkan
+    </Card>
+    <Card title="Uninstall package script" icon="trash">
+      Script untuk menghapus instalasi paket
+    </Card>
+  </CardGroup>
+
+  **Fitur Tambahan:**
+  - Custom VirusTotal and Wazuh rule for Web Defacement and Malware Detection
+  - Script Wazuh Alert Transfer
+  - Upcoming gmail integration
+</Accordion>
