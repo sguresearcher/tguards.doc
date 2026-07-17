@@ -3,861 +3,637 @@ title: "Installation"
 sidebarTitle: "Installation"
 ---
 
-# Prerequisites
+# I. Setup & Hardware Tuning
 
-- Fresh machine with Ubuntu 24.04 LTS (other Linux OS may work as well, but not tested). We do not recommend using machines that have other services running except you understand what you are doing.
-- System Requirements:
-- Broadband internet connections
+## A. Prerequisite
 
-|                                                                                         | **CPU** | **RAM**<br />**(GB)** | **Storage**<br />**(GB)** | **Remarks**                     |
-| --------------------------------------------------------------------------------------- | :-----: | :-------------------: | :-----------------------: | :-----------------------------: |
-| **Minimum Requirements**<br />_For trial deployments_                                   | 8       | 16                    | 100                       | Swap memory activation required |
-| **Standard Requirements**<br />_For production environments and continuous development_ | 8       | 32                    | 250                       | No need swap memory             |
+### 1. Common Prerequisites (Applies to Both VM & Bare-Metal)
 
-# Installation Steps
+- **Operating System**: The T-Guard installation script requires a Debian-based platform and will explicitly block non-Linux environments; however, it is highly recommended to use a clean Ubuntu Live Server 24.04 LTS installation to ensure maximum resource efficiency and full compatibility with the automated deployment stack.
+- **Network Addressing**: A static/dedicated IP address is required. `setup.sh` detects the host IP once during installation and hardcodes it into all dashboard URLs and inter-service integrations (n8n ↔ MISP ↔ IRIS ↔ Wazuh). An IP change will break these integrations.
 
-First, you need to clone the repository:
+### 2. Virtual Machine Version
 
-```
-git clone https://github.com/sguresearcher/nusantara.git
-```
+The resource requirements below define the allocation variables needed inside the guest OS framework.
 
-Move to the directory and execute the installation script:
+| Use Case | vCPU | RAM (GB) | Storage (GB) |
+| --- | :-: | :-: | :-: |
+| **Minimum Requirements**<br />_For trial deployments_ | 4 | 8 | 150 |
+| **Standard Requirements**<br />_For production environments and continuous_<br />_development_ | 8 | 16 | 250 |
 
-```
-cd nusantara
-chmod +x setup.sh
-./setup.sh
-```
+**Note:**
 
-To install the main T-Guard components, follow instructions below.
+1. **Host Overhead Buffering**: The requirements listed above are for the Guest VM allocation. Your physical host machine (PC/Laptop running VirtualBox) must possess at least \+2 vCPUs and \+4 GB RAM above these limits so the hypervisor does not lock up the host OS.
+2. **VirtualBox Tuning Parameters**: You must set your VM Network to Paravirtualized Network (virtio-net) and check Enable Host I/O Cache under your storage controllers to prevent database timeout faults (detail on step 1B).
 
-<Frame caption="Figure 1. T-Guard Installer Main Menu">
+### 3. Bare-Metal / Cloud Host Version
+
+The resource requirements below define the allocation variables needed for the OS framework.
+
+| Use Case | CPU | RAM (GB) | Storage (GB) |
+| --- | :-: | :-: | :-: |
+| **Minimum Requirements**<br />_For trial deployments_ | 4 | 8 | 150 |
+| **Standard Requirements**<br />_For production environments and continuous_<br />_development_ | 8 | 16 | 250 |
+
+**Note:**
+
+1. **Required SOC Firewall Port Openings** — Ensure your internal firewalls (e.g., UFW) or Cloud Security Groups allow inbound traffic on these explicit application ports. Do not expose these ports directly to the public internet; restrict entry using a secure VPN, a bastion host proxy, or explicit institutional IP address whitelists.
+   | Port | Service |
+   | --- | --- |
+   | 443 | Wazuh Dashboard Web Access Portal |
+   | 1443 | MISP Threat Intelligence Central Hub |
+   | 8443 | DFIR-IRIS Incident Response Web Application |
+   | 5678 | n8n SOAR Workflow Engine Interface |
+   | 55000 | Wazuh Manager API Communication Line |
+   | 1514 / 1515 | Wazuh Agent Enrollment & Secure Data Exchange Channels |
+
+## B. Hardware Performance Tuning (Virtual Machine in VirtualBox)
+
+<Steps>
+  <Step title="Change Network to Paravirtualized Network (virtio-net)">
+    <Frame caption="VirtualBox Network Settings — Paravirtualized Network (virtio-net)">
+      <img
+        src="/images/V2/vbox-network-virtio.png"
+        alt="Vbox Network Virtio"
+        title="Vbox Network Virtio"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **Why:** Paravirtualization allows the VM's network interface to communicate directly with the physical host machine instead of using a slow hardware-emulation layer. This maximizes network throughput and prevents log delays between your security agents and the central manager.
+  </Step>
+  <Step title="Enable Host I/O Cache">
+    <Frame caption="VirtualBox Storage Settings — Enable Host I/O Cache">
+      <img
+        src="/images/V2/vbox-host-io-cache.png"
+        alt="Vbox Host Io Cache"
+        title="Vbox Host Io Cache"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **Why:** Enabling this setting allows virtual storage disks to directly tap into the host system's RAM caching layer. This drastically improves Read/Write speeds during intense security database tasks, such as loading index tables in Opensearch or MariaDB.
+  </Step>
+  <Step title="Select Ubuntu Server (minimized)">
+    <Frame caption="Ubuntu Installer — Select Ubuntu Server (minimized)">
+      <img
+        src="/images/V2/ubuntu-server-minimized.png"
+        alt="Ubuntu Server Minimized"
+        title="Ubuntu Server Minimized"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **Why:** This version is customized to have a small runtime footprint to save vital system memory and storage space on your machine.
+  </Step>
+</Steps>
+
+# II. Installation Steps
+
+<Steps>
+  <Step title="Clone the repository">
+    ```text
+    git clone https://github.com/sguresearcher/nusantara.git (mock)
+    ```
+  </Step>
+  <Step title="Move to the directory and execute the installation script">
+    <Frame caption="Cloning the repository and running the installer">
+      <img
+        src="/images/V2/install-terminal-clone.png"
+        alt="Install Terminal Clone"
+        title="Install Terminal Clone"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    ```text
+    cd nusantara
+    chmod +x install.sh
+    sudo bash ./install.sh
+    ```
+  </Step>
+  <Step title="Navigate the CLI dashboard">
+    This is the interactive Command Line Interface (CLI) dashboard for managing the T-Guard framework. Users can navigate up and down using arrow keys, type keywords to filter specific choices, and press enter to execute operations. The core menu functionalities include:
+
+    <Frame caption="T-Guard Main Menu">
+      <img
+        src="/images/V2/tguard-main-menu.png"
+        alt="Tguard Main Menu"
+        title="Tguard Main Menu"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **\[1\] Full Installation**: Automatically provisions and installs the complete internal security stack (Wazuh, n8n, IRIS, and MISP).
+
+    **\[2\] Integrate Manual:** Allows users to link, adjust, or override custom operational API connection tokens between active platforms.
+
+    **\[3\] PoC (Proof of Concept):** Launches local attack scenarios (e.g., SSH brute force, EICAR malware execution) to verify that SIEM detection and correlation rules work properly.
+
+    **\[4\] Inject n8n Workflows**: Pushes structural incident triage, deduplication, and alerting blueprint playbooks straight into the automation engine.
+
+    **\[5\] View Default Credentials:** Prints the initial system dashboard web addresses, ports, configurations, and default user passwords.
+
+    **\[6\] Uninstall:** Safely stops all containers and purges all deployed components to return the host system to its clean original state.
+  </Step>
+</Steps>
+
+# III. Step 1: Full Installation
+
+Select Option \[1\] to perform a complete deployment of the SOC platform stack.
+
+<Frame caption="T-Guard Main Menu — Full Installation selected">
   <img
-    src="/images/main-menu-new.png"
-    alt="Main Menu Pn"
-    title="Main Menu Pn"
+    src="/images/V2/tguard-main-menu.png"
+    alt="Install Terminal Clone"
+    title="Install Terminal Clone"
     style={{ width:"100%" }}
   />
 </Frame>
 
-## **Step 1: Update System and Install Prerequisites**
+Select SOAR Engine:
 
-In the **Main Menu**, type ‘**1**’ and press Enter.
+<Steps>
+  <Step title="Choose your orchestration platform">
+    Choose your preferred orchestration platform. Select n8n (Lightweight, Highly Recommended).
 
-This will update existing packages, install all necessary dependencies, and set up Docker.
+    <Frame caption="SOAR Engine selection prompt">
+      <img
+        src="/images/V2/soar-engine-select.png"
+        alt="Soar Engine Select"
+        title="Soar Engine Select"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="Advanced Configuration">
+    Select NO to automatically deploy the entire system using standard, optimized default settings.
 
-Wait for the process to complete and it will then return to the **Main Menu**.
+    <Frame caption="Advanced Configuration prompt">
+      <img
+        src="/images/V2/advanced-config-prompt.png"
+        alt="Advanced Config Prompt"
+        title="Advanced Config Prompt"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="VirusTotal Integration">
+    Select YES if you want to perform automated threat scanning inside the SIEM.
 
-## **Step 2: Install T-Guard SOC Package**
+    <Frame caption="VirusTotal Integration prompt">
+      <img
+        src="/images/V2/virustotal-integration-prompt.png"
+        alt="Virustotal Integration Prompt"
+        title="Virustotal Integration Prompt"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="Enter your VirusTotal API Key">
+    You will be prompted to paste your 64-character VirusTotal API Key.
 
-In the **Main Menu**, type ‘**2**’ and press Enter.
+    <Frame caption="VirusTotal API Key input">
+      <img
+        src="/images/V2/virustotal-api-key-input.png"
+        alt="Virustotal Api Key Input"
+        title="Virustotal Api Key Input"
+        style={{ width:"100%" }}
+      />
+    </Frame>
 
-You’ll see a menu to choose the current network environment of your system for installing T-Guard, as shown in Figure 2.
+    **Note**: If using a VirusTotal free-tier key, note it has rate limits (usually per-minute/per-day caps), so high alert volume may delay or fail enrichment requests.
+  </Step>
+  <Step title="Confirm Deployment">
+    Select "Yes, start deployment!" to begin the stack installation.
 
-<Frame caption="FIgure 2. Network Environtment Options">
+    <Frame caption="Confirm Deployment prompt">
+      <img
+        src="/images/V2/confirm-deployment-prompt.png"
+        alt="Confirm Deployment Prompt"
+        title="Confirm Deployment Prompt"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="Review the default access endpoints">
+    Upon successful deployment, the system displays the default access endpoints:
+
+    <Frame caption="T-Guard Full Stack Deployment Complete">
+      <img
+        src="/images/V2/deployment-complete-credentials.png"
+        alt="Deployment Complete Credentials"
+        title="Deployment Complete Credentials"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **Security Reminder:** Change all default passwords immediately! Enable your firewall (`sudo ufw enable`) and restrict access exclusively to production ports: 443, 1443, 5678, 8443, 9200, 55000.
+  </Step>
+  <Step title="Configure the IRIS and MISP API keys">
+    Right after Step 1 (Full Installation) completes, the installer will show an ACTION REQUIRED alert:
+
+    <Frame caption="ACTION REQUIRED: API Configuration alert">
+      <img
+        src="/images/V2/action-required-api-config.png"
+        alt="Action Required Api Config"
+        title="Action Required Api Config"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **Action Alert:** The terminal warns you that the SOC is running but cannot automate data flow yet because the IRIS and MISP API keys must be generated manually from their respective dashboards.
+
+    **Next Steps Menu:** You are given direct options to proceed forward immediately, choose 2: **\[2\] Proceed to Integrate Manual (Configure APIs)**: Choose this option to jump directly into the setup screens for your API tokens.
+
+    The installer guides you through these prompt fields:
+
+    <Steps>
+      <Step title="IRIS DFIR Integration">
+        - **IRIS Dashboard URL**: Input the incident response application gateway
+
+        <Frame caption="IRIS Dashboard URL prompt">
+          <img
+            src="/images/V2/iris-dashboard-url-prompt.png"
+            alt="Iris Dashboard Url Prompt"
+            title="Iris Dashboard Url Prompt"
+            style={{ width:"100%" }}
+          />
+        </Frame>
+
+        - **IRIS API Key**: Paste the unique integration token generated directly from your IRIS dashboard profile (Profile -\> My Settings -\> API Key)
+
+        <Frame caption="IRIS Dashboard — API Key location">
+          <img
+            src="/images/V2/iris-api-key-profile.png"
+            alt="Iris Api Key Profile"
+            title="Iris Api Key Profile"
+            style={{ width:"100%" }}
+          />
+        </Frame>
+      </Step>
+      <Step title="MISP Threat Intelligence Integration">
+        - **MISP Platform URL**: Input the local threat intel repository path
+
+        <Frame caption="MISP Platform URL prompt">
+          <img
+            src="/images/V2/misp-platform-url-prompt.png"
+            alt="Misp Platform Url Prompt"
+            title="Misp Platform Url Prompt"
+            style={{ width:"100%" }}
+          />
+        </Frame>
+
+        - **MISP API Key**: Paste the administrative authorization key retrieved from the MISP web console (Administration -\> List Auth Keys)
+
+        <Frame caption="MISP — Authentication key created">
+          <img
+            src="/images/V2/misp-auth-key-created.png"
+            alt="Misp Auth Key Created"
+            title="Misp Auth Key Created"
+            style={{ width:"100%" }}
+          />
+        </Frame>
+      </Step>
+    </Steps>
+  </Step>
+  <Step title="Access all dashboards">
+    Try to access all the dashboard:
+
+    <Frame caption="Wazuh Dashboard">
+      <img
+        src="/images/V2/wazuh-dashboard-overview.png"
+        alt="Wazuh Dashboard Overview"
+        title="Wazuh Dashboard Overview"
+        style={{ width:"49%" }}
+        className="mx-auto"
+      />
+    </Frame>
+
+    <Frame caption="n8n Setup Screen">
+      <img
+        src="/images/V2/n8n-setup-owner-account.png"
+        alt="N8n Setup Owner Account"
+        title="N8n Setup Owner Account"
+        style={{ width:"49%" }}
+      />
+    </Frame>
+
+    <Frame caption="IRIS Dashboard">
+      <img
+        src="/images/V2/iris-dashboard-overview.png"
+        alt="Iris Dashboard Overview"
+        title="Iris Dashboard Overview"
+        style={{ width:"49%" }}
+        className="mx-auto"
+      />
+    </Frame>
+
+    <Frame caption="MISP Dashboard">
+      <img
+        src="/images/V2/misp-dashboard-events.png"
+        alt="Misp Dashboard Events"
+        title="Misp Dashboard Events"
+        style={{ width:"49%" }}
+        className="mx-auto"
+      />
+    </Frame>
+  </Step>
+</Steps>
+
+# IV. Step 2: Integrate Manual (Configure APIs)
+
+Select Option \[2\] to link or reconfigure the API connections between all external security platforms and your central orchestration engine (n8n).
+
+If the host IP changes (e.g. after a DHCP restart or VM migration), all dashboard URLs and integrations will break, since the IP was hardcoded during install, update the URL fields (Wazuh, IRIS, MISP, n8n), and re-submit each API key. Also check this menu if an integration suddenly fails: the IRIS/MISP key may have expired or been revoked from its own dashboard.
+
+<Steps>
+  <Step title="Wazuh SIEM Integration">
+    - **Wazuh Manager URL**: Input your deployment host address
+    - **Wazuh API Password**: Provide the secure API password (defaults to the system credentials generated during installation)
+
+    <Frame caption="Wazuh URL / API Password prompt">
+      <img
+        src="/images/V2/wazuh-integration-prompt.png"
+        alt="Wazuh Integration Prompt"
+        title="Wazuh Integration Prompt"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="IRIS DFIR Integration">
+    - **IRIS Dashboard URL**: Input the incident response application gateway
+
+    <Frame caption="IRIS URL prompt (Integrate Manual)">
+      <img
+        src="/images/V2/iris-dashboard-url-prompt.png"
+        alt="Iris Dashboard Url Prompt"
+        title="Iris Dashboard Url Prompt"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    - **IRIS API Key**: Paste the unique integration token generated directly from your IRIS dashboard profile (Profile -\> My Settings -\> API Key)
+
+    <Frame caption="IRIS Dashboard — API Key location">
+      <img
+        src="/images/V2/iris-api-key-profile.png"
+        alt="Iris Api Key Profile"
+        title="Iris Api Key Profile"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="MISP Threat Intelligence Integration">
+    - **MISP Platform URL**: Input the local threat intel repository path
+
+    <Frame caption="MISP URL prompt (Integrate Manual)">
+      <img
+        src="/images/V2/misp-platform-url-prompt.png"
+        alt="Misp Platform Url Prompt"
+        title="Misp Platform Url Prompt"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    - **MISP API Key**: Paste the administrative authorization key retrieved from the MISP web console (Administration -\> List Auth Keys)
+
+    <Frame caption="MISP — Authentication key created">
+      <img
+        src="/images/V2/misp-auth-key-created.png"
+        alt="Misp Auth Key Created"
+        title="Misp Auth Key Created"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="n8n Orchestration">
+    - **n8n Target URL**: Input the orchestration engine dashboard address
+
+    <Frame caption="n8n URL prompt">
+      <img
+        src="/images/V2/n8n-url-prompt.png"
+        alt="N8n Url Prompt"
+        title="N8n Url Prompt"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="VirusTotal Integration (Threat Enrichment Layer)">
+    - **VirusTotal API Key (Optional)**: If you skipped the automated VirusTotal onboarding during the initial Full Installation phase, or if you need to update an expired key, paste your 64-character key here.
+
+    <Frame caption="VirusTotal API Key (Optional) prompt">
+      <img
+        src="/images/V2/virustotal-optional-prompt.png"
+        alt="Virustotal Optional Prompt"
+        title="Virustotal Optional Prompt"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **Note**: This token allows the Wazuh manager to forward extracted file hashes (such as malware diagnostic strings for POC) to the VirusTotal cloud engine for structural threat scoring.
+  </Step>
+  <Step title="Save and apply the integration">
+    Select "Yes, SAVE and apply" at the bottom prompt. The installer engine will bundle your configurations and output a secure state schema to:
+
+    ```text
+    /var/lib/tguard_state/integration.json
+    ```
+  </Step>
+  <Step title="Activation Notice">
+    These integrations will lock in and apply across your SOC ecosystem upon the next scheduled T-Guard service container restart.
+  </Step>
+</Steps>
+
+# V. Step 3: PoC (Proof of Concept) Simulation
+
+Select Option \[3\] to test your defensive monitoring rules against simulated real-world attack behaviors.
+
+<Frame caption="T-Guard Main Menu — PoC selected">
   <img
-    src="/images/Network-Environment-Options.png"
-    alt="Network Env Choice Pn"
-    title="Network Env Choice Pn"
+    src="/images/V2/tguard-main-menu-poc.png"
+    alt="Tguard Main Menu Poc"
+    title="Tguard Main Menu Poc"
     style={{ width:"100%" }}
   />
 </Frame>
 
-If you are using a local virtual machine, such as VirtualBox or VMware, choose option ‘**1**’.
+Select your target host IP (defaults to loopback 127.0.0.1) and toggle the security scenarios you want to run:
 
-If you are using a cloud-based virtual machine, such as Google Cloud Platform (GCP), Amazon Web Services (AWS), or Microsoft Azure, choose option ‘**2**’.
-
-The installation process will start sequentially, beginning with Wazuh (include deploy initial wazuh agent), followed by Shuffle, IRIS, and MISP, as shown in Figure 3, 4, 5, and 6, respectively.
-
-<Frame caption="Figure 3. Wazuh Installation">
+<Frame caption="Select PoC Scenarios / Target IP prompt">
   <img
-    src="/images/Wazuh-Installation.png"
-    alt="Wazuh Inst Pn"
-    title="Wazuh Inst Pn"
+    src="/images/V2/poc-scenario-select-target-ip.png"
+    alt="Poc Scenario Select Target Ip"
+    title="Poc Scenario Select Target Ip"
     style={{ width:"100%" }}
   />
 </Frame>
 
-<Frame caption="Figure 4. Shuffle Installation">
+<Steps>
+  <Step title="A. SSH Brute Force Simulation">
+    **Execution**: Simulates an attacker trying to guess passwords by attempting 10 invalid login rounds on the host machine using non-existent usernames.
+
+    <Frame caption="SSH brute force simulation — terminal output">
+      <img
+        src="/images/V2/poc-bruteforce-output.png"
+        alt="Poc Bruteforce Output"
+        title="Poc Bruteforce Output"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **SIEM Verification**: You will see alert hits flagged as "Password Guessing, SSH" and "sshd brute force trying to get access to the system".
+
+    <Frame caption="Wazuh — SSH brute force alerts">
+      <img
+        src="/images/V2/wazuh-bruteforce-alerts.png"
+        alt="Wazuh Bruteforce Alerts"
+        title="Wazuh Bruteforce Alerts"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="B. EICAR Malware Detection Test">
+    **Execution**: Drops an industry-standard EICAR malware test string file into monitored server folders (`/root/eicar.com` and `/home/user/nusantara/usecase/webdeface/uploads/eicar-sample.txt`)
+
+    <Frame caption="EICAR PoC scenario — terminal output">
+      <img
+        src="/images/V2/poc-eicar-output.png"
+        alt="Poc Eicar Output"
+        title="Poc Eicar Output"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **SIEM Verification**: The agent instantly catches the file writing event.
+
+    <Frame caption="Wazuh — EICAR file writing event detected">
+      <img
+        src="/images/V2/wazuh-eicar-detection.png"
+        alt="Wazuh Eicar Detection"
+        title="Wazuh Eicar Detection"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    It triggers a VirusTotal Alert within the log engine, showing that up to 61 engines flagged the signature.
+
+    <Frame caption="VirusTotal — EICAR signature detections">
+      <img
+        src="/images/V2/virustotal-eicar-detections.png"
+        alt="Virustotal Eicar Detections"
+        title="Virustotal Eicar Detections"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="C. Web Defacement Detection">
+    **Execution**: Simulates a website defacement compromise by modifying the application file index (`/home/user/nusantara/usecase/webdeface/index.html`).
+
+    <Frame caption="Web defacement PoC scenario — terminal output">
+      <img
+        src="/images/V2/poc-webdeface-output.png"
+        alt="Poc Webdeface Output"
+        title="Poc Webdeface Output"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    **SIEM Verification**: T-Guard triggers a "Stored Data Manipulation" alert event. Wazuh catches the File Integrity Monitoring (FIM) change in real-time, logging the modified attributes, timestamp modifications, and cryptographic checksum differences (Old md5sum vs New md5sum).
+
+    <Frame caption="Wazuh — Stored Data Manipulation / FIM alert">
+      <img
+        src="/images/V2/wazuh-fim-webdeface-alert.png"
+        alt="Wazuh Fim Webdeface Alert"
+        title="Wazuh Fim Webdeface Alert"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+</Steps>
+
+# VI. Step 4: Inject n8n Workflows
+
+Select Option \[4\] to automatically load pre-built blueprint playbooks into your n8n orchestration instance.
+
+<Steps>
+  <Step title="Inject the workflows">
+    Select "Yes, inject workflows" at the prompt. The installer will verify that the n8n container is up and running before importing the playbooks.
+
+    <Frame caption="T-Guard Main Menu — Inject n8n Workflows selected">
+      <img
+        src="/images/V2/tguard-main-menu-inject-n8n.png"
+        alt="Tguard Main Menu Inject N8n"
+        title="Tguard Main Menu Inject N8n"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+  </Step>
+  <Step title="Review the playbooks loaded">
+    The system injects 4 essential SOC automation workflows directly into n8n:
+
+    <Frame caption="n8n — Injected workflows overview">
+      <img
+        src="/images/V2/n8n-workflows-overview.png"
+        alt="N8n Workflows Overview"
+        title="N8n Workflows Overview"
+        style={{ width:"100%" }}
+      />
+    </Frame>
+
+    a. **Master Triage**: Receives raw alerts from the Wazuh Webhook, extracts the Indicators of Compromise (Extract IOC), and splits the data into three paths: Trigger Enrichment, Trigger IRIS, and Trigger Notification.
+
+    b. **IP Enrichment & Anti-Dupe**: Takes the parsed data, filters out repetitive IP addresses (Check Duplicate IP), and queries AbuseIPDB and VirusTotal only if the IP is new (IF Not Scanned).
+
+    c. **IRIS Incident Response Anti-Dupe**: Checks if a ticket already exists for the alert (Search IRIS Case). If the Case Exists, it updates the ticket (Add Note); if not, it opens a new one (Create Case).
+
+    d. **Notification Dispatcher**: Takes the final alert details and sends a direct security message to your team's chat group using the Telegram node (sendMessage).
+
+    **Activation**: Once injected, log into your n8n web dashboard to view, review, and turn on the playbooks. The workflow templates are ready to use, but you may need to manually update or adjust the URL fields inside the nodes to match your network path (please refer to the official n8n documentation: [https://docs.n8n.io/integrations](https://docs.n8n.io/integrations)).
+  </Step>
+</Steps>
+
+# VII. Step 5: View Default Credentials
+
+Select Option \[5\] from the main menu if you need to display the default system passwords and access URLs that were generated during the initial deployment.
+
+<Frame caption="T-Guard Main Menu — View Default Credentials selected">
   <img
-    src="/images/Shuffle-Installation.png"
-    alt="Shuffle Inst Pn"
-    title="Shuffle Inst Pn"
+    src="/images/V2/tguard-main-menu-view-credentials.png"
+    alt="Tguard Main Menu View Credentials"
+    title="Tguard Main Menu View Credentials"
     style={{ width:"100%" }}
   />
 </Frame>
 
-<Frame caption="Figure 5. IRIS-DFIR Instalation">
+- This option is helpful if you lose your login details or need a quick reference to access your web dashboards.
+- When selected, the terminal will print a secure text block containing the exact URLs, ports, and default usernames for Wazuh, n8n, IRIS, and MISP.
+
+<Frame caption="T-Guard Deployment Complete — Default credentials">
   <img
-    src="/images/IRIS-Installation.png"
-    alt="Iris Inst Pn"
-    title="Iris Inst Pn"
+    src="/images/V2/tguard-deployment-complete-credentials.png"
+    alt="Tguard Deployment Complete Credentials"
+    title="Tguard Deployment Complete Credentials"
+    style={{ width:"100%" }}
+    className="mx-auto"
+  />
+</Frame>
+
+**Security Check:** The screen will display a warning reminder to change these default passwords immediately to prevent unauthorized access to your SOC stack if you going to use this for production.
+
+# VIII. Step 6: Uninstall T-Guard Components
+
+Select Option \[6\] only when you need to completely remove the T-Guard platform from your host system.
+
+<Frame caption="T-Guard Main Menu — Uninstall selected">
+  <img
+    src="/images/V2/tguard-main-menu-uninstall.png"
+    alt="Tguard Main Menu Uninstall"
+    title="Tguard Main Menu Uninstall"
     style={{ width:"100%" }}
   />
 </Frame>
 
-<Frame caption="Figure 6. MISP Installation">
-  <img
-    src="/images/MISP-Installation.png"
-    alt="Misp Inst Pn"
-    title="Misp Inst Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Once the process is complete, a table will appear displaying dashboard access details and credentials for each module, as shown in Figure 7.
-
-<Frame caption="Figure 7. Dashboard Access and Default Credentials">
-  <img
-    src="/images/Dashboard-Access.png"
-    alt="Dashboard Pn"
-    title="Dashboard Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Open your browser and follow the link to access your dashboard.
-
-<Frame caption="Figure 8. Warning Page">
-  <img
-    src="/images/Warning-page.png"
-    alt="Image(4) Pn"
-    title="Image(4) Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-You will see a warning from the browser that the certificate is invalid as illustrated in Figure 8. This is normal because we haven’t installed the signed SSL certificate, which is recommended for production. For now, just click proceed.
-
-The first page of Wazuh should be as illustrated in Figure 9.
-
-<Frame caption="Figure 9. Wazuh Login Page">
-  <img
-    src="/images/wazuh-dashboard.png"
-    alt="Image(2) Avi"
-    title="Image(2) Avi"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Log in using **above mentioned credentials**. After log in, you should see Figure 10.
-
-<Frame caption="Figure 10. Wazuh Dashboard">
-  <img
-    src="/images/image(5).png"
-    alt="Image(5) Pn"
-    title="Image(5) Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Next, open Shuffle dashboard.
-
-Create administrator account using **above mentioned credentials** and then login using the same credentials. After logged in, you should see Figure 11.
-
-<Frame caption="Figure 11. Shuffle Dashboard">
-  <img
-    src="/images/shuffle-dashboard.jpeg"
-    alt="Image(6) Pn"
-    title="Image(6) Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Next, open IRIS dashboard.
-
-Sign in using **above mentioned credentials**. After logged in, you should see Figure 12.
-
-<Frame caption="Figure 12. IRIS Dashboard">
-  <img
-    src="/images/iris-dashboards.png"
-    alt="Image(3) Avi"
-    title="Image(3) Avi"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Next, open MISP dashboard.
-
-Sign in using **above mentioned credentials**. After logged in, you should see Figure 13.
-
-<Frame caption="Figure 13. MISP Dashboard">
-  <img
-    src="/images/misp-dashboard.png"
-    alt="Image(7) Pn"
-    title="Image(7) Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-### **Credential Summary – T-Guard Modules**
-
-| **Service** | **Web Interface**   | **Username**                                | **Password**          |
-| ----------- | ------------------- | ------------------------------------------- | --------------------- |
-| Wazuh       | https://\<ip\>      | admin                                       | SecretPassword        |
-| DFIR-IRIS   | https://\<ip\>:8443 | administrator                               | MySuperAdminPassword! |
-| Shuffle     | http://\<ip\>:3001  |  Create your own                             | Create your own |
-| MISP        | https://\<ip\>:1443 | [admin@admin.test](mailto:admin@admin.test) | admin                 |
-
-# Integration Steps
-
-In the **Main Menu**, type ‘**3**’ and press Enter.
-
-The system will prompt you to enter the IRIS API key, as shown in Figure 14.
-
-<Frame caption="Figure 14. Input API KEY">
-  <img
-    src="/images/iris-int-wazuh.png"
-    alt="Iris Wazuh Int Pn"
-    title="Iris Wazuh Int Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-To obtain it, navigate to the IRIS page, select the Administrator profile, then go to **My Settings**.
-
-<Frame>
-  <img
-    src="/images/iris-int-wazuh2.png"
-    alt="Iris Wazuh Int2 Pn"
-    title="Iris Wazuh Int2 Pn"
-    style={{ width:"66%", margin:"auto" }}
-  />
-</Frame>
-
-The API key will be displayed.
-
-<Frame>
-  <img
-    src="/images/iris-api-key.png"
-    alt="IRIS API Key Display"
-    title="IRIS API Key Display"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Copy and paste it to the installation, then press **Enter**. Wait until the process is finished.
-
-During the installation process, you will be prompted to enter several integration parameters. Please follow the instructions below carefully.
-
-<Frame>
-  <img
-    src="/images/integration-prompt.png"
-    alt="Integration Parameters"
-    title="Integration Parameters"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-# Shuffle Webhook URL
-Then, you’ll be prompted to enter your Shuffle Webhook URL.
-
-<Frame>
-  <img
-    src="/images/shuffle-integration.png"
-    alt="Webhook4 Pn"
-    title="Webhook4 Pn"
-    style={{ width:"49%", margin:"auto" }}
-  />
-</Frame>
-
-To obtain the URL, follow the instructions below.
-
-- Go to your Shuffle dashboard.
-- Select **Workflows**.
-- Select **Create Workflow**.
-- Specify your preferred **workflow name**—for example, *Sample workflow* — then select **Create from scratch**.
-- In the left panel, under the **Triggers** tab, drag the **Webhook** icon to the middle panel as illustrated below.
-
----
-
-### Step 1: Create a New Workflow
-
-<Frame>
-  <img
-    src="/images/shuffle-workflow-create.png"
-    alt="Creating a new workflow in Shuffle"
-    title="Shuffle Create Workflow"
-    style={{ width:"70%", margin:"auto" }}
-  />
-</Frame>
-
----
-
-### Step 2: Select Create from Scratch
-
-<Frame>
-  <img
-    src="/images/shuffle-create-from-scratch.png"
-    alt="Create workflow from scratch in Shuffle"
-    title="Shuffle Create from Scratch"
-    style={{ width:"70%", margin:"auto" }}
-  />
-</Frame>
-
----
-
-### Step 3: Add Webhook Trigger
-
-<Frame>
-  <img
-    src="/images/shuffle-webhook-trigger.png"
-    alt="Adding webhook trigger in Shuffle workflow"
-    title="Shuffle Webhook Trigger"
-    style={{ width:"70%", margin:"auto" }}
-  />
-</Frame>
-
-- Click on **Webhook** module, then it will show up the configuration panel on the right.
-  - In the "Webhook URL" parameter, manually copy the URL by **highlighting it until the end of the url**, then press **Ctrl+C**.
-
-<Frame>
-  <img
-    src="/images/webhook-url.jpeg"
-    alt="Webhook5 Pn"
-    title="Webhook5 Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-- Paste it to the installation terminal, then press **Enter**. Wait until the process is finished.
-- Go back to the Shuffle, click the **Start** button as illustrated below.
-
-<Frame>
-  <img
-    src="/images/webhook-start.jpeg"
-    alt="Webhook6 Pn"
-    title="Webhook6 Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-- Next, select the **Shuffle** module in the middle panel, then it will show up the configuration panel on the right.
-  - In the "Find Actions" parameter, make sure to select '**Repeat back to me**'.
-  - In the "Call" parameter, change the value to `$exec`, then click the **Save** button, as illustrated below.
-
-<Frame>
-  <img
-    src="/images/webhook-node.jpeg"
-    alt="Webhook7 Pn"
-    title="Webhook7 Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Click the **Test Execution** button (play icon).
-
-<Frame>
-  <img
-    src="/images/test-icon.png"
-    alt="Play Pn"
-    title="Play Pn"
-    style={{ width:"20%", margin:"auto" }}
-  />
-</Frame>
-
-Select **Run without Runtime Argument**.
-
-<Frame>
-  <img
-    src="/images/run-argument.png"
-    alt="Run Anyway Pn"
-    title="Run Anyway Pn"
-    style={{ width:"80%", margin:"auto" }}
-  />
-</Frame>
-
-Then, you'll see the All Workflow Runs panel on the right side.
-
-<Frame>
-  <img
-    src="/images/shuffle-run.jpeg"
-    alt="Shuffle Pn"
-    title="Shuffle Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Next, on the left panel, select Apps tab, type **IRIS** in the Search Active Apps bar. Just click the **IRIS V2** (not IRIS V2 Fork), and wait until the **IRIS v2** is show up
-
-Then drag it to the middle panel as illustrated below.
-
-<Frame>
-  <img
-    src="/images/iris-workflow.jpeg"
-    alt="Iris Pn"
-    title="Iris Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Click IRIS Module, then fill the following parameters:
-
-- Find Actions: **Add a new case**
-- Apikey: (insert your IRIS API Key)
-- Url: (your IRIS url)
-
-Before proceeding to the **Advanced** settings on the right side, you must first configure **Authentication** for the IRIS module.
-
-## Configure IRIS Authentication
-
-1. In the Shuffle workflow editor, click the **IRIS module**.
-2. Locate the **Authentication** section.
-3. Click the **`+` (Add Authentication)** button.
-4. Select **IRIS_API** as the authentication type.
-5. Fill in the required fields:
-   - **API Key**: Paste your IRIS API Key
-   - **URL**: Enter your IRIS base URL (for example: `https://192.168.101:8443`)
-6. Click **Submit**.
-7. Ensure the authentication status shows **Valid**.
-
-<Frame>
-  <img
-    src="/images/iris-add-authentication.jpeg"
-    alt="Adding IRIS authentication in Shuffle"
-    title="Add IRIS Authentication"
-    style={{ width:"70%", margin:"auto" }}
-  />
-</Frame>
-
-<Frame>
-  <img
-    src="/images/iris-authentication.jpeg"
-    alt="IRIS authentication configuration with API key and URL"
-    title="IRIS Authentication Configuration"
-    style={{ width:"70%", margin:"auto" }}
-  />
-</Frame>
-
----
-
-## Configure IRIS Action
-
-After authentication is successfully configured, continue with the action setup.
-
-1. Under **Find Actions**, select **Add a new case**.
-2. Verify that the **Authentication** field is set to **IRIS_API**.
-3. Ensure the following parameters are filled:
-   - **Find Actions**: **Add a new case**
-   - **Authentication**: **IRIS_API**
-   - **API Key**: Automatically loaded from authentication
-   - **URL**: Automatically loaded from authentication
-
----
-
-Choose the Advanced on the right side, and click the Expand Window Button.
-
-<Frame>
-  <img
-    src="/images/iris-advanced.jpeg"
-    alt="Delapan Pn"
-    title="Delapan Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Scroll down to the Body parameter, and click the Expand Window button.
-
-<Frame>
-  <img
-    src="/images/iris-body.jpeg"
-    alt="Iris2 Pn"
-    title="Iris2 Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Change the body content with the following:
-
-```
-{  
-{
-  "case_customer": 1,
-  "case_soc_id": 1,
-  "cid": 1,
-  "case_name":
-"$exec.rule.description",
-  "case_description": "Log Level:
-$exec.rule.level \n\n Full Log:
-$exec.full_log",
-  "case_severity_id": 2,
-  "case_status_id": 1,
-  "ioc": "$exec.data.srcip"
-}
-}
-```
-
-Then, click Try It button on the top right. Wait until the result is show up in the bottom.
-
-After that, click **Submit** button on the bottom right.
-
-Then, click **Save** button.
-
-<Frame>
-  <img
-    src="/images/save-workflow.png"
-    alt="Save Pn"
-    title="Save Pn"
-    style={{ width:"20%", margin:"auto" }}
-  />
-</Frame>
-
-Click the **Show Executions** button to open the **All Workflow Runs** panel. You should see alerts from Wazuh listed here.
-
-<Frame>
-  <img
-    src="./images/iris-output.png"
-    alt="Iris Shuffle Pn"
-    title="Iris Shuffle Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Then, click on the alerts with the following icon.
-
-<Frame>
-  <img
-    src="/images/alerts.png"
-    alt="Alerts Pn"
-    title="Alerts Pn"
-    style={{ width:"53%", margin:"auto" }}
-  />
-</Frame>
-
-If there’s nothing available yet, run the Brute-Force Simulation which is explained in Use Case section below in Use Case 1, then come back here.
-
-Then, click **Refresh** button as illustrated below.
-
-<Frame>
-  <img
-    src="./images/iris-refresh.jpeg"
-    alt="Sepuluh Pn"
-    title="Sepuluh Pn"
-    style={{ width:"47%", margin:"auto" }}
-  />
-</Frame>
-
-It should be exist the IRIS process. Inside the IRIS module, the Status value should be 200, means that the automation of ticket creation is success, as illustrated below.
-
-<Frame>
-  <img
-    src="/images/output-iris-workflow.png"
-    alt="Sebelas Pn"
-    title="Sebelas Pn"
-    style={{ width:"52%", margin:"auto" }}
-  />
-</Frame>
-
-We can also check in the IRIS page (**https://\<your_ip\>:8443**), select **Manage Case** tab on the left panel. We can see the ticket created from Shuffle exists.
-
-<Frame>
-  <img
-    src="/images/iris-case.png"
-    alt="Duabelas Avi"
-    title="Duabelas Avi"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-# Virus Total API Key
-Then, you’ll be prompted to enter your VirusTotal API key.
-
-If you don’t have a VirusTotal account yet, please create one first in following URL:
-https://www.virustotal.com/
-
-If you already have an account, log in, click your profile name, and select ‘API Key’ to view it.
-Copy and paste it to the installation, then press Enter. Wait until the process is finished.
-<Frame>
-  <img
-    src="/images/virustotalapi.png"
-    alt="Virustotalapi Pn"
-    title="Virustotalapi Pn"
-    style={{ width:"68%", margin:"auto" }}
-  />
-</Frame>
-
-
-# MISP Configuration
-You will then be prompted to configure the MISP integration.
-MISP Base URL
-Example prompt:
-```
-MISP Base URL (default: https://<SERVER_IP>:1443):
-```
-If the default value is correct, you can simply press Enter. Otherwise, type your MISP Base URL and press Enter.
-Example:
-```
-https://192.168.0.108:1443
-```
-MISP API Key
-Next step, enter your MISP API Key.
-Example prompt:
-```
-MISP API Key:
-```
-Copy and paste your MISP API key, then press Enter.
-To obtain the MISP API key:
-  1. Log in to the MISP Dashboard
-  2. Go to Administration → List Auth Keys
-  3. Copy an existing key or create a new one
-  4. Paste the key into the terminal
-
-<Frame caption="MISP Dashboard">
-  <img
-    src="/images/misp-dashboard.png"
-    alt="MISP Dashboard"
-    title="MISP Dashboard"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-<Frame caption="MISP List Auth Key">
-  <img
-    src="/images/misp-list-auth-key.png"
-    alt="MISP List Auth Key"
-    title="MISP List Auth Key"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-<Frame caption="MISP Add Authentication">
-  <img
-    src="/images/misp-add-authentication.png"
-    alt="MISP Add Auth"
-    title="MISP Add Auth"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-<Frame caption="MISP Add Auth Key">
-  <img
-    src="/images/misp-add-auth.png"
-    alt="MISP Add Auth Key"
-    title="MISP Add Auth Key"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-## MISP Default Feed Data (JSON)
-
-After configuring the MISP API key, the next step is to **add the default MISP feed sources** to enable threat intelligence ingestion.
-
-### Import Default Feeds from JSON
-
-1. Open the following GitHub URL in your browser:  
-   https://github.com/MISP/MISP/blob/2.4/app/files/feed-metadata/defaults.json
-
-2. Copy the entire JSON content from the page.
-
-3. In the **MISP Dashboard**, navigate to:
-   - **Sync Actions**
-   - **Feeds**
-   - **Import Feeds from JSON**
-
-4. Paste the copied JSON content into the input field.
-5. Click **Add** to import the feed configuration.
-
-<Frame caption="MISP Data Feed">
-  <img
-    src="./images/misp-data-feed.png"
-    alt="MISP Data Feed"
-    title="MISP Data Feed"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-<Frame caption="MISP Feeds">
-  <img
-    src="/images/misp-feeds.png"
-    alt="MISP Feeds"
-    title="MISP Feeds"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-<Frame caption="MISP Import">
-  <img
-    src="/images/misp-import.png"
-    alt="MISP Import"
-    title="MISP Import"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-
-### Enable and Fetch Feed Data
-
-1. Go to **List Feeds**.
-2. Select **Check All** to select all available feeds.
-3. Click **Enable Selected** to activate the data sources.
-4. Click **Fetch and Store All Feed Data** to download threat intelligence data from each feed source.
-
-<Frame caption="MISP Checklist">
-  <img
-    src="/images/misp-checklist.png"
-    alt="MISP Checklist"
-    title="MISP Checklist"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-> This process may take several minutes depending on the number of feeds and network conditions.
-
----
-
-### Viewing Imported Feed Data
-
-- Retrieved threat intelligence events can be viewed under **Event Actions**.
-- Attributes generated from each event can be reviewed in **List Attributes**.
-
-<Frame caption="MISP List Events">
-  <img
-    src="/images/misp-list-events.png"
-    alt="MISP List Events"
-    title="MISP List Events"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-<Frame caption="MISP List Attributes">
-  <img
-    src="/images/misp-list-attributes.png"
-    alt="MISP List Attributes"
-    title="MISP List Attributes"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-These attributes are used as **IOC lookup values by Wazuh**, enabling correlation between detected events and known threat indicators.
-
----
-
-Once this step is completed, MISP will actively provide threat intelligence data that can be consumed by **Wazuh** for IOC matching and alert enrichment.
-
-
-# Wazuh Dashboard URL
-Finally, you will be prompted to enter the Wazuh Dashboard URL.
-Example prompt:
-```
-Wazuh Dashboard URL (default: https://<SERVER_IP>):
-```
-If the default value matches your setup, press Enter.
-Otherwise, enter the correct URL and press Enter.
-Example:
-```
-https://192.168.0.108
-```
-
-# Use Case
-
-<Frame caption="Main Menu">
-  <img
-    src="/images/main-menu.png"
-    alt="Main Menu Pn"
-    title="Main Menu Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-In the **Main Menu**, type ‘**4**’ and press Enter.
-
-## **Use Case 1: Brute-Force Simulation**
-
-<Frame caption="PoC Menu">
-  <img
-    src="/images/poc.png"
-    alt="Poc Pn"
-    title="Poc Pn"
-    style={{ width:"55%", margin:"auto" }}
-  />
-</Frame>
-
-In the **PoC Menu**, type ‘**1**’ and press Enter.
-
-<img
-  src="/images/poc-1.png"
-  alt="Poc 1 Pn"
-  title="Poc 1 Pn"
-  style={{ width:"100%" }}
-/>
-
-If prompted to continue connecting, type **yes** and press **Enter**.
-
-Multiple login attempts have been recorded in the Wazuh security events, indicating a potential security threat.
-
-<Frame caption="Wazuh Security Events">
-  <img
-    src="/images/brute-force.png"
-    alt="Brute Force Pn"
-    title="Brute Force Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-These events will be closely monitored and analyzed by the security operations center (SOC) team to determine the source of the attempts and take appropriate action to mitigate any potential risk.
-
-## **Use Case 2: Malware Detection and Auto-Response**
-
-In the **PoC Menu**, type ‘**2**’ and press Enter.
-
-Open your Wazuh page (**https://\<your_ip\>**).
-
-It would be appear an event about VirusTotal detect the malware, the deletion of the file, and the activated response regarding to the malware, illustrated below.
-
-<Frame caption="VirusTotal Malware Detection">
-  <img
-    src="/images/zero.avif"
-    alt="Zero Avi"
-    title="Zero Avi"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-We can also check in the IRIS to see the ticket that automatic created
-
-<Frame caption="IRIS Ticket Created">
-  <img
-    src="/images/one.png"
-    alt="One Pn"
-    title="One Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-## **Use Case 3: Web Defacement Detection**
-
-In the **PoC Menu**, type ‘**3**’ and press Enter.
-
-Before simulate the web defacement, open the given link (**http://\<your_ip\>:3000**) in your browser. It will direct you to the example website that created by the script.
-
-<Frame caption="Example Website Before Defacement">
-  <img
-    src="/images/two.png"
-    alt="Two Pn"
-    title="Two Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-Then, start the web defacement. It will change the website appearance.
-
-<Frame caption="Website After Defacement">
-  <img
-    src="/images/three.png"
-    alt="Three Pn"
-    title="Three Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
-
-We can see in the Wazuh for the detection of file content changes. The rule id is 550 with the description is Integrity Checksum Changed.
-
-<Frame caption="Wazuh Integrity Check Detection">
-  <img
-    src="/images/four.png"
-    alt="Four Pn"
-    title="Four Pn"
-    style={{ width:"100%" }}
-  />
-</Frame>
+- **Automated Cleanup**: The installer engine stops all active security services and cleanly deletes the operational containers from your Docker environment.
+- **Data Removal**: This process clears out internal system states, temporary deployment certificates, and network port mappings.
+- **Final State**: Your Ubuntu host environment is returned to its original configuration, leaving your hardware resources free for other applications.
